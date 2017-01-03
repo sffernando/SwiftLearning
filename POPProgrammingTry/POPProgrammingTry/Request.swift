@@ -20,8 +20,7 @@ protocol Request {
     var method: HTTPMethod { get }
     var parameter: [String: Any] { get }
     
-    associatedtype Response
-    func parser(data: Data) -> Response?
+    associatedtype Response: Decodable
 }
 
 struct UserRequest: Request {
@@ -41,16 +40,21 @@ struct UserRequest: Request {
     }
 }
 
+protocol Client {
+    func send<T: Request>(_ r: T, handler: @escaping (T.Response?) -> Void)
+    
+    var host: String { get }
+}
 
-extension Request {
-    func send(handler: @escaping (Response?) -> Void) {
-        let url = URL(string: host.appending(path))!
-        var request = URLRequest(url: url)
-        request.httpMethod = method.rawValue
+struct URLSessionClient: Client {
+    let host = "https://api.onevcat.com"
+    func send<T : Request>(_ r: T, handler: @escaping (T.Response?) -> Void) {
+        let url = URL(string: host.appending(r.path))
+        var request = URLRequest(url: url!)
+        request.httpMethod = r.method.rawValue
         
-        let task = URLSession.shared.dataTask(with: request) {
-            data, _, error in
-            if let data = data, let res = self.parser(data: data) {
+        let task = URLSession.shared.dataTask(with: request) { (data, _, error) in
+            if let data = data, let res = T.Response.parser(data: data) {
                 DispatchQueue.main.async {
                     handler(res)
                 }
@@ -62,4 +66,8 @@ extension Request {
         }
         task.resume()
     }
+}
+
+protocol Decodable {
+    static func parser(data: Data) -> Self?
 }

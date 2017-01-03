@@ -14,10 +14,9 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
 
-        let request = UserRequest(name: "onevcat")
-        request.send { user in
+        URLSessionClient().send(UserRequest(name: "onevcat")) { user in
             if let user = user {
-                print("\(user.message) from \(user.name)")
+                print("\(user.message), \(user.name)")
             }
         }
     }

@@ -27,3 +27,9 @@ struct User {
         self.message = message
     }
 }
+
+extension User: Decodable {
+    static func parser(data: Data) -> User? {
+        return User(data: data)
+    }
+}
